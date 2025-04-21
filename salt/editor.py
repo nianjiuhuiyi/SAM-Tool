@@ -58,7 +58,7 @@ class Editor:
         self.categories = self.dataset_explorer.get_categories()
         # 得到最后标注的一张的id，也就是当前打开图片的id
         self.image_id = self.dataset_explorer.get_last_anno_img_id()  
-         # 得到所有图片数量
+        # 得到所有图片数量
         self.imgs_num = self.dataset_explorer.get_imgs_num()     
         # 得到当前图片的名字
         self.img_name = self.dataset_explorer.get_img_base_name(self.image_id)
@@ -230,4 +230,3 @@ class Editor:
         # 添加类别后，就把 self.selected_category_flag 标识改为 True
         if self.not_selected_category_flag:
             self.not_selected_category_flag = False
-           

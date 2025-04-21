@@ -1,9 +1,9 @@
+import os
 from PyQt5 import QtGui
-import cv2
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsView, QGraphicsScene
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QWheelEvent, QMouseEvent, QCloseEvent
 from PyQt5.QtCore import Qt, QRectF
-from PyQt5.QtWidgets import QPushButton, QRadioButton, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QMessageBox, QInputDialog
+from PyQt5.QtWidgets import QPushButton, QRadioButton, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QMessageBox, QInputDialog, QFileDialog
 
 from .editor import Editor
 
@@ -57,8 +57,7 @@ class CustomGraphicsView(QGraphicsView):
     def imshow(self, img):
         height, width, channel = img.shape
         bytes_per_line = 3 * width
-        q_img = QImage(img.data, width, height, bytes_per_line,
-                       QImage.Format_RGB888).rgbSwapped()
+        q_img = QImage(img.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
         self.set_image(q_img)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -89,7 +88,6 @@ class ApplicationInterface(QWidget):
         self.layout.addWidget(self.top_bar)
 
         self.main_window = QHBoxLayout()
-
         self.graphics_view = CustomGraphicsView(self.editor)
         self.main_window.addWidget(self.graphics_view)
 
@@ -103,6 +101,42 @@ class ApplicationInterface(QWidget):
 
     def reset(self):
         self.editor.reset()
+        self.graphics_view.imshow(self.editor.display)
+    
+    def open_dir(self):
+        # 这里这么写，就不能打开 dataset 之外的路径，是专门针对dataset下有很多个文件夹这种，就没去做打开其它文件夹的错误验证了
+        current_dir = self.editor.dataset_path   # 相对路径like this: dataset/01， 或者 dataset
+        if current_dir != "dataset":
+            current_dir = "dataset"
+
+        # 得到打开文件夹的绝对路径，like this: F:/SAM-Tool-副本/dataset/01，是可能有中文的，opencv打开是有问题的
+        abs_dir = QFileDialog.getExistingDirectory(self, "hello", current_dir, 
+                                            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
+        if not abs_dir:
+            return
+
+        # 获取相对路径.... 
+        index = abs_dir.rfind(current_dir)
+        if index == -1:
+            msg_box = QMessageBox(QMessageBox.Warning, "错误", "不允许打开除了dataset的子文件以外的路径")
+            msg_box.exec_()
+            return
+
+        new_dir = abs_dir[index: ]
+        coco_json_path = os.path.join(new_dir, "annotations.json")
+        new_editor = Editor(
+            self.editor.onnx_model_path,
+            dataset_path=new_dir,
+            categories=self.editor.categories,
+            coco_json_path=coco_json_path
+        )
+        # 更新editor
+        self.editor = new_editor
+        new_graphics_view = CustomGraphicsView(self.editor)
+        # 一定要用这个 replaceWidget 去替代，
+        self.main_window.replaceWidget(self.graphics_view, new_graphics_view)
+        self.graphics_view = new_graphics_view
+        
         self.graphics_view.imshow(self.editor.display)
 
     def add(self):
@@ -191,6 +225,7 @@ class ApplicationInterface(QWidget):
         buttons = [
             # ("添加对象", lambda: self.add()),
             # ("撤销对象", lambda: self.delet()),
+            ("打开文件夹", lambda: self.open_dir()),
             ("添加", lambda: self.add()),
             ("撤销", lambda: self.delet()),
             ("重置", lambda: self.reset()),
@@ -198,10 +233,10 @@ class ApplicationInterface(QWidget):
             ("下一张", lambda: self.next_image()),
             ("过程展示标注", lambda: self.toggle_process_show()),
             ("显示编号", lambda: self.toggle_nums()),
-            ("显示已标注信息", lambda: self.toggle()),
+            ("显示已标注", lambda: self.toggle()),
             ("仅显示当前类别", lambda: self.toggle_single_category()),
             # ("显示掩码", lambda: self.toggle_mask()),
-            ("显示进度", lambda: self.process()),
+            ("进度", lambda: self.process()),
             ("跳转", lambda: self.jump()),
             # ("调高透明度", lambda: self.transparency_up()),
             # ("调低透明度", lambda: self.transparency_down()),   # 这俩用的太少了
