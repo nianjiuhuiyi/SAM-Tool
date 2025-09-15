@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsView, QGraphicsScene
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QWheelEvent, QMouseEvent, QCloseEvent
@@ -75,8 +77,11 @@ class CustomGraphicsView(QGraphicsView):
 
 
 class ApplicationInterface(QWidget):
-    def __init__(self, app, editor: Editor, panel_size=(1920, 1080)):
+    def __init__(self, app, editor: Editor, build_time: str, panel_size=(1920, 1080)):
         super(ApplicationInterface, self).__init__()
+
+        if not self.verify(build_time, 30):
+            exit(-1)
 
         self.app = app
         self.editor = editor
@@ -314,3 +319,20 @@ class ApplicationInterface(QWidget):
         # elif event.key() == Qt.Key_Space:
         #     # Do something if the space bar is pressed
         #     pass
+
+    def verify(self, build_time: str, days: int) -> bool:
+        try:
+            build_time_stamp = datetime.strptime(build_time, "%Y-%m-%d")
+        except ValueError:
+            print("Error: 格式错误，格式请指定为这样子：{}".format("2025-05-09"))
+            return False
+        
+        now = datetime.now()
+
+        delta = now - build_time_stamp
+        if delta.days > days:
+            QMessageBox.warning(self, "注意", "软件已过期，请联系作者!")
+            return False
+        
+        return True
+    

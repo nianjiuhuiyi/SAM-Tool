@@ -1,12 +1,18 @@
 import os
 import argparse
 import sys
+from datetime import datetime
 
 from PyQt5.QtWidgets import QApplication
 
 from salt.editor import Editor
 from salt.interface import ApplicationInterface
-        
+
+
+# 指定打包当天日期（默认）
+BUILD_TIMESTAMP = "2025-09-12"
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -31,6 +37,6 @@ if __name__ == "__main__":
     )
 
     app = QApplication(sys.argv)
-    window = ApplicationInterface(app, editor)
+    window = ApplicationInterface(app, editor, BUILD_TIMESTAMP)
     window.show()
     sys.exit(app.exec_())
