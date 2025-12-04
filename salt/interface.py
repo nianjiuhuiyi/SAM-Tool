@@ -80,7 +80,7 @@ class ApplicationInterface(QWidget):
     def __init__(self, app, editor: Editor, build_time: str, panel_size=(1920, 1080)):
         super(ApplicationInterface, self).__init__()
 
-        if not self.verify(build_time, 30):
+        if not self.verify(build_time, 365):
             exit(-1)
 
         self.app = app
